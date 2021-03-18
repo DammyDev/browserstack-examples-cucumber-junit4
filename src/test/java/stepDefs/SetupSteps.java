@@ -2,6 +2,7 @@ package stepDefs;
 
 
 import com.browserstack.local.Local;
+import io.cucumber.core.cli.Main;
 import io.cucumber.java.After;
 import io.cucumber.java.Before;
 import io.cucumber.java.Scenario;
@@ -23,18 +24,21 @@ import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
 public class SetupSteps {
+
     public StepData stepData;
     private static final String URL = "https://bstackdemo.com";
     private Local local;
+    private static JSONObject config;
+    public static ThreadLocal<JSONObject> threadLocalValue = new ThreadLocal<>();
 
     public SetupSteps(StepData stepData) {
         this.stepData = stepData;
     }
+
     @Before
     public void setUp(Scenario scenario) throws Exception {
 
-        JSONObject config;
-        JSONObject capabilityObject;
+        JSONObject capabilityObject = new JSONObject();
         JSONParser parser = new JSONParser();
         DesiredCapabilities caps = new DesiredCapabilities();
 
@@ -53,19 +57,58 @@ public class SetupSteps {
             stepData.webDriver.manage().window().maximize();
             stepData.url = URL;
         } else if (StringUtils.isNoneEmpty(System.getProperty("env")) && System.getProperty("env").equalsIgnoreCase("remote")) {
+
             if (System.getenv("caps") != null) {
                 config = (JSONObject) parser.parse(System.getenv("caps"));
             } else {
                 config = (JSONObject) parser.parse(new FileReader("resources/conf/caps.json"));
-            }
-            if (System.getProperty("parallel") != null) {
-                capabilityObject = new JSONObject();
-            } else {
-                JSONObject singleCapabilityJson = (JSONObject) ((JSONObject) config.get("tests")).get("single");
-                JSONArray environments = (JSONArray) singleCapabilityJson.get("env_caps");
-                capabilityObject = Utility.getCombinedCapability((Map<String, String>) environments.get(0), config, singleCapabilityJson);
+                System.out.println("true");
             }
 
+            JSONObject singleCapabilityJson;
+            JSONArray environments;
+            String osCaps = "";
+
+            if (System.getProperty("caps-type").equalsIgnoreCase("single")) {
+                 osCaps = System.getProperty("caps-type");
+                 System.out.println(osCaps);
+            } else if (System.getProperty("caps-type").equalsIgnoreCase("local")) {
+                osCaps = System.getProperty("caps-type");
+                System.out.println(osCaps);
+            } else if (System.getProperty("caps-type").equalsIgnoreCase("parallel")) {
+                osCaps = System.getProperty("caps-type");
+                System.out.println(osCaps);
+            }
+
+            singleCapabilityJson = (JSONObject) ((JSONObject) config.get("tests")).get(osCaps);
+            environments = (JSONArray)singleCapabilityJson.get("env_caps");
+
+            if (System.getProperty("caps-type").equalsIgnoreCase("parallel")) {
+                osCaps = System.getProperty("caps-type");
+                System.out.println(osCaps);
+                System.out.println(environments.toJSONString());
+
+                for (Object obj: environments) {
+                    JSONObject parallelConfig = Utility.getCombinedCapability((Map<String, String>) obj,config,singleCapabilityJson);
+                    System.out.println(parallelConfig.toJSONString());
+                    Thread thread = new Thread(() -> {
+                        System.setProperty("parallel","true");
+                        threadLocalValue.set(parallelConfig);
+                        try {
+                            String[] argv = new String[]{"-g", "", "src/test/resources/com/com.browserstack"};
+                            ClassLoader contextClassLoader = Thread.currentThread().getContextClassLoader();
+                            Main.run(argv, contextClassLoader);
+                        } catch(Exception e) {
+                            e.getStackTrace();
+                        } finally {
+                            threadLocalValue.remove();
+                        }
+                    });
+                    thread.start();
+                }
+            }
+
+            capabilityObject = Utility.getCombinedCapability((Map<String, String>) environments.get(0),config,singleCapabilityJson);
             Map<String, String> commonCapabilities = (Map<String, String>) capabilityObject.get("capabilities");
             Iterator it = commonCapabilities.entrySet().iterator();
             while (it.hasNext()) {

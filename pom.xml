@@ -308,7 +308,7 @@
                                 <testFailureIgnore>false</testFailureIgnore>
                                 <property>
                                     <name>caps-type</name>
-                                    <value>single-local</value>
+                                    <value>parallel</value>
                                 </property>
                                 <property>
                                     <name>env</name>
