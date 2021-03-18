@@ -1,5 +1,6 @@
 package stepDefs;
 
+
 import com.browserstack.local.Local;
 import io.cucumber.java.After;
 import io.cucumber.java.Before;
@@ -17,6 +18,7 @@ import utils.Utility;
 
 import java.io.FileReader;
 import java.net.URL;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
@@ -36,6 +38,7 @@ public class SetupSteps {
         JSONObject capabilityObject;
         JSONParser parser = new JSONParser();
         DesiredCapabilities caps = new DesiredCapabilities();
+
         if (StringUtils.isNoneEmpty(System.getProperty("env")) && System.getProperty("env").equalsIgnoreCase("on-prem")) {
 
             stepData.url = URL;
@@ -50,8 +53,8 @@ public class SetupSteps {
             stepData.webDriver = new RemoteWebDriver(new URL("http://localhost:4444/wd/hub"), DesiredCapabilities.chrome());
             stepData.webDriver.manage().window().maximize();
             stepData.url = URL;
-        } else {
-            if(System.getenv("caps")!= null) {
+        } else if (StringUtils.isNoneEmpty(System.getProperty("env")) && System.getProperty("env").equalsIgnoreCase("remote")) {
+            if (System.getenv("caps") != null) {
                 config = (JSONObject) parser.parse(System.getenv("caps"));
             } else {
                 config = (JSONObject) parser.parse(new FileReader("resources/conf/caps.json"));
@@ -60,8 +63,8 @@ public class SetupSteps {
                 capabilityObject = new JSONObject();
             } else {
                 JSONObject singleCapabilityJson = (JSONObject) ((JSONObject) config.get("tests")).get("local");
-                JSONArray environments = (JSONArray)singleCapabilityJson.get("env_caps");
-                capabilityObject = Utility.getCombinedCapability((Map<String, String>) environments.get(0),config,singleCapabilityJson);
+                JSONArray environments = (JSONArray) singleCapabilityJson.get("env_caps");
+                capabilityObject = Utility.getCombinedCapability((Map<String, String>) environments.get(0), config, singleCapabilityJson);
             }
 
             Map<String, String> commonCapabilities = (Map<String, String>) capabilityObject.get("capabilities");
@@ -96,7 +99,6 @@ public class SetupSteps {
             String URL = String.format("https://%s:%s@hub.browserstack.com/wd/hub", username, accessKey);
             stepData.webDriver = new RemoteWebDriver(new URL(URL), caps);
         }
-
     }
 
     @After

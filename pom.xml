@@ -31,13 +31,13 @@
         </dependency>
         <dependency>
             <groupId>io.cucumber</groupId>
-            <artifactId>cucumber-java</artifactId>
+            <artifactId>cucumber-junit-platform-engine</artifactId>
             <version>${cucumber.version}</version>
             <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>io.cucumber</groupId>
-            <artifactId>cucumber-junit-platform-engine</artifactId>
+            <artifactId>cucumber-java</artifactId>
             <version>${cucumber.version}</version>
             <scope>test</scope>
         </dependency>
@@ -154,6 +154,10 @@
                                     <value>remote</value>
                                 </property>
                                 <property>
+                                    <name>caps-type</name>
+                                    <value>single</value>
+                                </property>
+                                <property>
                                     <name>cucumber.filter.name</name>
                                     <value>${test-name}</value>
                                 </property>
@@ -186,6 +190,10 @@
                                     <value>remote</value>
                                 </property>
                                 <property>
+                                    <name>caps-type</name>
+                                    <value>single_local</value>
+                                </property>
+                                <property>
                                     <name>cucumber.filter.name</name>
                                     <value>${test-name}</value>
                                 </property>
@@ -198,6 +206,133 @@
                 </plugins>
             </build>
         </profile>
+        <profile>
+            <id>bstack-parallel</id>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-surefire-plugin</artifactId>
+                        <version>${maven-surefire-plugin.version}</version>
+                        <configuration>
+                            <systemProperties>
+                                <testFailureIgnore>false</testFailureIgnore>
+                                <configuration>
+                                    <parallel>methods</parallel>
+                                    <threadCount>5</threadCount>
+                                </configuration>
+                                <property>
+                                    <name>caps-type</name>
+                                    <value>single</value>
+                                </property>
+                                <property>
+                                    <name>env</name>
+                                    <value>remote</value>
+                                </property>
+                                <property>
+                                    <name>cucumber.execution.parallel.enabled</name>
+                                    <value>true</value>
+                                </property>
+                                <property>
+                                    <name>cucumber.execution.parallel.config.fixed.parallelism</name>
+                                    <value>5</value>
+                                </property>
+                                <property>
+                                    <name>cucumber.execution.parallel.config.strategy</name>
+                                    <value>fixed</value>
+                                </property>
+                            </systemProperties>
+                            <includes>
+                                <include>RunCucumberTests.java</include>
+                            </includes>
+                        </configuration>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+        <profile>
+            <id>bstack-local-parallel</id>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-surefire-plugin</artifactId>
+                        <version>${maven-surefire-plugin.version}</version>
+                        <configuration>
+                            <systemProperties>
+                                <testFailureIgnore>false</testFailureIgnore>
+                                <configuration>
+                                    <parallel>methods</parallel>
+                                    <threadCount>5</threadCount>
+                                </configuration>
+                                <property>
+                                    <name>caps-type</name>
+                                    <value>single-local</value>
+                                </property>
+                                <property>
+                                    <name>env</name>
+                                    <value>remote</value>
+                                </property>
+                                <property>
+                                    <name>cucumber.execution.parallel.enabled</name>
+                                    <value>true</value>
+                                </property>
+                                <property>
+                                    <name>cucumber.execution.parallel.config.fixed.parallelism</name>
+                                    <value>5</value>
+                                </property>
+                                <property>
+                                    <name>cucumber.execution.parallel.config.strategy</name>
+                                    <value>fixed</value>
+                                </property>
+                            </systemProperties>
+                            <includes>
+                                <include>RunCucumberTests.java</include>
+                            </includes>
+                        </configuration>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+        <profile>
+            <id>bstack-local-parallel-browsers</id>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-surefire-plugin</artifactId>
+                        <version>${maven-surefire-plugin.version}</version>
+                        <configuration>
+                            <systemProperties>
+                                <testFailureIgnore>false</testFailureIgnore>
+                                <property>
+                                    <name>caps-type</name>
+                                    <value>single-local</value>
+                                </property>
+                                <property>
+                                    <name>env</name>
+                                    <value>remote</value>
+                                </property>
+                                <property>
+                                    <name>cucumber.execution.parallel.enabled</name>
+                                    <value>true</value>
+                                </property>
+                                <property>
+                                    <name>cucumber.execution.parallel.config.fixed.parallelism</name>
+                                    <value>5</value>
+                                </property>
+                                <property>
+                                    <name>cucumber.execution.parallel.config.strategy</name>
+                                    <value>fixed</value>
+                                </property>
+                            </systemProperties>
+                            <includes>
+                                <include>RunCucumberTests.java</include>
+                            </includes>
+                        </configuration>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
     </profiles>
-
 </project>
