@@ -12,39 +12,47 @@
         <maven.compiler.source>15</maven.compiler.source>
         <maven.compiler.target>15</maven.compiler.target>
         <maven-surefire-plugin.version>2.22.2</maven-surefire-plugin.version>
-        <cucumber.version>6.9.1</cucumber.version>
+        <cucumber.version>5.4.0</cucumber.version>
         <selenium-java.version>3.141.59</selenium-java.version>
         <browserstack-local-java.version>1.0.6</browserstack-local-java.version>
+        <test-name>End to End Scenario</test-name>
         <slf4j.version>1.7.30</slf4j.version>
         <logback.version>1.2.3</logback.version>
         <json-simple.version>1.1.1</json-simple.version>
-        <aspectj.version>1.9.1</aspectj.version>
-        <test-name>End to End Scenario</test-name>
     </properties>
 
     <dependencies>
         <dependency>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-api</artifactId>
+            <version>${slf4j.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>ch.qos.logback</groupId>
+            <artifactId>logback-classic</artifactId>
+            <version>${logback.version}</version>
+        </dependency>
+        <dependency>
             <groupId>junit</groupId>
             <artifactId>junit</artifactId>
-            <version>4.12</version>
+            <version>4.13.1</version>
             <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>io.cucumber</groupId>
-            <artifactId>cucumber-junit-platform-engine</artifactId>
-            <version>${cucumber.version}</version>
+            <artifactId>cucumber-junit</artifactId>
+            <version>5.4.0</version>
             <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>io.cucumber</groupId>
             <artifactId>cucumber-java</artifactId>
-            <version>${cucumber.version}</version>
-            <scope>test</scope>
+            <version>5.4.0</version>
         </dependency>
         <dependency>
             <groupId>io.cucumber</groupId>
             <artifactId>cucumber-picocontainer</artifactId>
-            <version>${cucumber.version}</version>
+            <version>5.4.0</version>
             <scope>test</scope>
         </dependency>
         <dependency>
@@ -68,21 +76,6 @@
             <artifactId>commons-lang3</artifactId>
             <version>3.11</version>
         </dependency>
-        <dependency>
-            <groupId>io.qameta.allure</groupId>
-            <artifactId>allure-cucumber6-jvm</artifactId>
-            <version>2.13.8</version>
-        </dependency>
-        <dependency>
-            <groupId>org.slf4j</groupId>
-            <artifactId>slf4j-api</artifactId>
-            <version>${slf4j.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>ch.qos.logback</groupId>
-            <artifactId>logback-classic</artifactId>
-            <version>${logback.version}</version>
-        </dependency>
     </dependencies>
 
     <profiles>
@@ -101,6 +94,10 @@
                                 <name>env</name>
                                 <value>on-prem</value>
                             </property>
+                            <property>
+                                <name>cucumber.filter.name</name>
+                                <value>${test-name}</value>
+                            </property>
                         </systemProperties>
                         <includes>
                             <include>RunCucumberTests.java</include>
@@ -110,6 +107,30 @@
             </plugins>
         </build>
     </profile>
+        <profile>
+            <id>on-prem-suite</id>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-surefire-plugin</artifactId>
+                        <version>2.22.2</version>
+                        <configuration>
+                            <systemProperties>
+                                <testFailureIgnore>false</testFailureIgnore>
+                                <property>
+                                    <name>env</name>
+                                    <value>on-prem</value>
+                                </property>
+                            </systemProperties>
+                            <includes>
+                                <include>RunCucumberTests.java</include>
+                            </includes>
+                        </configuration>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
     <profile>
         <id>docker</id>
         <build>
@@ -154,10 +175,6 @@
                                     <value>remote</value>
                                 </property>
                                 <property>
-                                    <name>caps-type</name>
-                                    <value>single</value>
-                                </property>
-                                <property>
                                     <name>cucumber.filter.name</name>
                                     <value>${test-name}</value>
                                 </property>
@@ -190,10 +207,6 @@
                                     <value>remote</value>
                                 </property>
                                 <property>
-                                    <name>caps-type</name>
-                                    <value>single_local</value>
-                                </property>
-                                <property>
                                     <name>cucumber.filter.name</name>
                                     <value>${test-name}</value>
                                 </property>
@@ -215,12 +228,12 @@
                         <artifactId>maven-surefire-plugin</artifactId>
                         <version>${maven-surefire-plugin.version}</version>
                         <configuration>
+                            <parallel>methods</parallel>
+                            <useUnlimitedThreads>false</useUnlimitedThreads>
+                            <threadCount>5</threadCount>
+                            <testFailureIgnore>true</testFailureIgnore>
                             <systemProperties>
                                 <testFailureIgnore>false</testFailureIgnore>
-                                <configuration>
-                                    <parallel>methods</parallel>
-                                    <threadCount>5</threadCount>
-                                </configuration>
                                 <property>
                                     <name>caps-type</name>
                                     <value>single</value>
@@ -228,18 +241,6 @@
                                 <property>
                                     <name>env</name>
                                     <value>remote</value>
-                                </property>
-                                <property>
-                                    <name>cucumber.execution.parallel.enabled</name>
-                                    <value>true</value>
-                                </property>
-                                <property>
-                                    <name>cucumber.execution.parallel.config.fixed.parallelism</name>
-                                    <value>5</value>
-                                </property>
-                                <property>
-                                    <name>cucumber.execution.parallel.config.strategy</name>
-                                    <value>fixed</value>
                                 </property>
                             </systemProperties>
                             <includes>
@@ -259,12 +260,12 @@
                         <artifactId>maven-surefire-plugin</artifactId>
                         <version>${maven-surefire-plugin.version}</version>
                         <configuration>
+                            <parallel>methods</parallel>
+                            <useUnlimitedThreads>false</useUnlimitedThreads>
+                            <threadCount>5</threadCount>
+                            <testFailureIgnore>true</testFailureIgnore>
                             <systemProperties>
                                 <testFailureIgnore>false</testFailureIgnore>
-                                <configuration>
-                                    <parallel>methods</parallel>
-                                    <threadCount>5</threadCount>
-                                </configuration>
                                 <property>
                                     <name>caps-type</name>
                                     <value>single-local</value>
@@ -312,18 +313,6 @@
                                 <property>
                                     <name>env</name>
                                     <value>remote</value>
-                                </property>
-                                <property>
-                                    <name>cucumber.execution.parallel.enabled</name>
-                                    <value>true</value>
-                                </property>
-                                <property>
-                                    <name>cucumber.execution.parallel.config.fixed.parallelism</name>
-                                    <value>5</value>
-                                </property>
-                                <property>
-                                    <name>cucumber.execution.parallel.config.strategy</name>
-                                    <value>fixed</value>
                                 </property>
                             </systemProperties>
                             <includes>

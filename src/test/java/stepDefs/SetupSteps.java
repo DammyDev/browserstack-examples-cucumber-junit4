@@ -18,7 +18,6 @@ import utils.Utility;
 
 import java.io.FileReader;
 import java.net.URL;
-import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
@@ -62,7 +61,7 @@ public class SetupSteps {
             if (System.getProperty("parallel") != null) {
                 capabilityObject = new JSONObject();
             } else {
-                JSONObject singleCapabilityJson = (JSONObject) ((JSONObject) config.get("tests")).get("local");
+                JSONObject singleCapabilityJson = (JSONObject) ((JSONObject) config.get("tests")).get("single");
                 JSONArray environments = (JSONArray) singleCapabilityJson.get("env_caps");
                 capabilityObject = Utility.getCombinedCapability((Map<String, String>) environments.get(0), config, singleCapabilityJson);
             }
