@@ -8,13 +8,13 @@ import org.json.simple.parser.JSONParser;
 import org.json.simple.parser.ParseException;
 import org.openqa.selenium.JavascriptExecutor;
 import org.openqa.selenium.WebDriver;
+import org.openqa.selenium.WebElement;
 import org.openqa.selenium.remote.DesiredCapabilities;
-
-import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 
 public class Utility {
@@ -24,6 +24,12 @@ public class Utility {
     private static JSONObject singleCapabilityJson;
     private static JSONArray environments;
     private static Local local;
+    private static final String LOCATION_SCRIPT_FORMAT = "navigator.geolocation.getCurrentPosition = function(success){\n" +
+            "    var position = { \"coords\":{\"latitude\":\"%s\",\"longitude\":\"%s\"}};\n" +
+            "    success(position);\n" +
+            "}";
+    private static final String OFFER_LATITUDE = "19";
+    private static final String OFFER_LONGITUDE = "72";
 
     private Utility(){}
 
@@ -76,7 +82,7 @@ public class Utility {
         if (System.getenv("caps") != null) {
             config = (JSONObject) parser.parse(System.getenv("caps"));
         } else {
-            config = (JSONObject) parser.parse(new FileReader("resources/conf/caps.json"));
+            config = (JSONObject) parser.parse(new FileReader("resources/conf/test_caps.json"));
             System.out.println("Read from caps.json = true");
         }
         return config;
@@ -120,8 +126,10 @@ public class Utility {
             caps.setCapability("browserstack.localIdentifier", localIdentifier);
             local = new Local();
             Map<String, String> options = Utility.getLocalOptions(config);
+            System.out.println((String) capabilityObject.get("key"));
             options.put("key", (String) capabilityObject.get("key"));
             options.put("localIdentifier", localIdentifier);
+            System.out.println("Local Start");
             local.start(options);
         }
 
@@ -139,6 +147,19 @@ public class Utility {
         }
 
         return String.format("https://%s:%s@hub.browserstack.com/wd/hub", username, accessKey);
+    }
+
+    public static boolean isAscendingOrder(List<WebElement> priceWebElement, int length) {
+        if (priceWebElement == null || length < 2)
+            return true;
+        if (Integer.parseInt(priceWebElement.get(length - 2).getText()) > Integer.parseInt(priceWebElement.get(length - 1).getText()))
+            return false;
+        return isAscendingOrder(priceWebElement, length - 1);
+    }
+
+    public static void mockGPS(WebDriver webDriver) {
+        String locationScript = String.format(LOCATION_SCRIPT_FORMAT, OFFER_LATITUDE, OFFER_LONGITUDE);
+        ((JavascriptExecutor) webDriver).executeScript(locationScript);
     }
 
 }

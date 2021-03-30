@@ -1,0 +1,8 @@
+target
+build
+allure-results
+.gradle
+.idea
+*.iml
+*.log
+*.err

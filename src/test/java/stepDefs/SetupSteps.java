@@ -1,56 +1,41 @@
 package stepDefs;
 
 import com.browserstack.local.Local;
-import io.cucumber.core.cli.Main;
 import io.cucumber.java.After;
 import io.cucumber.java.Before;
 import io.cucumber.java.Scenario;
+import org.apache.commons.lang3.RandomStringUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
-import org.json.simple.parser.JSONParser;
-import org.junit.runner.RunWith;
-import org.junit.runners.Parameterized;
+import org.json.simple.parser.ParseException;
 import org.openqa.selenium.chrome.ChromeDriver;
 import org.openqa.selenium.remote.CapabilityType;
 import org.openqa.selenium.remote.DesiredCapabilities;
 import org.openqa.selenium.remote.RemoteWebDriver;
-import utils.Parallelized;
 import utils.Utility;
 
-import java.io.FileReader;
+import java.io.IOException;
 import java.net.URL;
-import java.util.ArrayList;
-import java.util.List;
+import java.util.Iterator;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
-@RunWith(Parallelized.class)
 public class SetupSteps {
 
     public StepData stepData;
-    private static final String URL = "https://bstackdemo.com";
-    private Local local;
+    private static final String bstackAppUrl = "https://bstackdemo.com";
+    private Local bstackLocal;
     private static JSONObject config;
-    public static ThreadLocal<JSONObject> threadLocalValue = new ThreadLocal<>();
 
-    @Parameterized.Parameter(value = 0)
-    public int taskID;
-
-    @Parameterized.Parameters
-    public static Iterable<? extends Object> data() throws Exception {
-        List<Integer> taskIDs = new ArrayList<Integer>();
-
-        if(System.getProperty("caps-type").equalsIgnoreCase("parallel")) {
-            JSONParser parser = new JSONParser();
-            config = (JSONObject) parser.parse(new FileReader("resources/conf/caps.json"));
-            int envs = ((JSONArray)config.get("environments")).size();
-
-            for(int i=0; i<envs; i++) {
-                taskIDs.add(i);
-            }
+    static {
+        try {
+            config = Utility.getConfig();
+        } catch (ParseException e) {
+            e.printStackTrace();
+        } catch (IOException e) {
+            e.printStackTrace();
         }
-        return taskIDs;
     }
 
     public SetupSteps(StepData stepData) {
@@ -67,7 +52,7 @@ public class SetupSteps {
         String osCaps = Utility.getOsCaps();
         if (StringUtils.isNoneEmpty(System.getProperty("env")) && System.getProperty("env").equalsIgnoreCase("on-prem")) {
 
-            stepData.url = URL;
+            stepData.url = bstackAppUrl;
             stepData.webDriver = new ChromeDriver();
             stepData.webDriver.manage().timeouts().implicitlyWait(15, TimeUnit.SECONDS);
             stepData.webDriver.get(stepData.url);
@@ -78,27 +63,56 @@ public class SetupSteps {
             caps.setCapability(CapabilityType.ACCEPT_SSL_CERTS, true);
             stepData.webDriver = new RemoteWebDriver(new URL("http://localhost:4444/wd/hub"), DesiredCapabilities.chrome());
             stepData.webDriver.manage().window().maximize();
-            stepData.url = URL;
+            stepData.url = bstackAppUrl;
         } else if (StringUtils.isNoneEmpty(System.getProperty("env")) && System.getProperty("env").equalsIgnoreCase("remote")) {
 
             JSONArray environments;
-            config = Utility.getConfig();
 
-            JSONObject capabilityJson = (JSONObject) ((JSONObject) config.get("tests")).get(osCaps);
-            environments = (JSONArray) capabilityJson.get("env_caps");
-            System.out.println(taskID);
-
-            capabilityObject = Utility.getCombinedCapability((Map<String, String>) environments.get(taskID), config, capabilityJson);
+            if (System.getProperty("caps-type").equalsIgnoreCase("parallel")) {
+                System.out.println("ParallelTest");
+                capabilityObject = ParallelTest.threadLocalValue.get();
+            } else {
+                JSONObject capabilityJson = (JSONObject) ((JSONObject) config.get("tests")).get(osCaps);
+                environments = (JSONArray) capabilityJson.get("env_caps");
+                capabilityObject = Utility.getCombinedCapability((Map<String, String>) environments.get(0), config, capabilityJson);
+            }
 
             stepData.url = (String) capabilityObject.get("application_endpoint");
-            String URL = Utility.getRemoteUrl(capabilityObject);
+            String bstackUrl = Utility.getRemoteUrl(capabilityObject);
+            Map<String, String> commonCapabilities = (Map<String, String>) capabilityObject.get("capabilities");
+            Iterator it = commonCapabilities.entrySet().iterator();
+            while (it.hasNext()) {
+                Map.Entry pair = (Map.Entry) it.next();
+                if (caps.getCapability(pair.getKey().toString()) == null) {
+                    caps.setCapability(pair.getKey().toString(), pair.getValue().toString());
+                }
+            }
 
-            caps = Utility.getFinalCaps(capabilityObject);
-
+            if (caps.getCapability("browserstack.local") != null && caps.getCapability("browserstack.local").equals("true")) {
+                String localIdentifier = RandomStringUtils.randomAlphabetic(8);
+                caps.setCapability("browserstack.localIdentifier", localIdentifier);
+                bstackLocal = new Local();
+                Map<String, String> options = Utility.getLocalOptions(config);
+                System.out.println((String) capabilityObject.get("key"));
+                options.put("key", (String) capabilityObject.get("key"));
+                options.put("localIdentifier", localIdentifier);
+                System.out.println("Local Start");
+                bstackLocal.start(options);
+            }
             caps.setCapability("name", scenario.getName());
-            System.out.println(caps.toString());
+            stepData.webDriver = new RemoteWebDriver(new URL(bstackUrl), caps);
+        }
+    }
 
-            stepData.webDriver = new RemoteWebDriver(new URL(URL), caps);
+    private void setupLocal(DesiredCapabilities caps, JSONObject testConfigs, String accessKey) throws Exception {
+        if (caps.getCapability("browserstack.local") != null && caps.getCapability("browserstack.local").equals("true")) {
+            String localIdentifier = RandomStringUtils.randomAlphabetic(8);
+            caps.setCapability("browserstack.localIdentifier", localIdentifier);
+            bstackLocal = new Local();
+            Map<String, String> options = Utility.getLocalOptions(testConfigs);
+            options.put("key", accessKey);
+            options.put("localIdentifier", localIdentifier);
+            bstackLocal.start(options);
         }
     }
 

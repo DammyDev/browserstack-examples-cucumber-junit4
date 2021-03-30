@@ -7,6 +7,9 @@ import org.junit.Assert;
 import org.openqa.selenium.By;
 import org.openqa.selenium.Keys;
 import org.openqa.selenium.NoSuchElementException;
+import org.openqa.selenium.support.ui.ExpectedConditions;
+import org.openqa.selenium.support.ui.WebDriverWait;
+import utils.Utility;
 
 import static java.lang.Thread.*;
 
@@ -16,14 +19,15 @@ public class LoginPageSteps {
     public LoginPageSteps(StepData stepData) {this.stepData = stepData;}
 
     @And("I press Log In Button")
-    public void iPressLogin() throws InterruptedException {
+    public void iPressLogin() {
         stepData.webDriver.findElement(By.cssSelector(".Button_root__24MxS")).click();
     }
 
     @Then("I should see {string} as Login Error Message")
     public void iShouldSeeAsLoginErrorMessage(String expectedMessage) {
+        WebDriverWait wait = new WebDriverWait(stepData.webDriver, 5);
         try {
-            String errorMessage = stepData.webDriver.findElement(By.cssSelector(".api-error")).getText();
+            String errorMessage = wait.until(ExpectedConditions.visibilityOfElementLocated(By.cssSelector(".api-error"))).getText();
             Assert.assertEquals(expectedMessage, errorMessage);
         } catch (NoSuchElementException e) {
             throw new AssertionError("Error in logging in");
@@ -32,13 +36,15 @@ public class LoginPageSteps {
 
     @And("I SignIn as {string} with {string} password")
     public void iSignInAsWithPassword(String username, String password) {
+        WebDriverWait wait = new WebDriverWait(stepData.webDriver, 5);
         stepData.webDriver.findElement(By.linkText("Sign In")).click();
-        stepData.webDriver.findElement(By.xpath("//*[@id=\"username\"]/div/div[1]")).click();
+        wait.until(ExpectedConditions.visibilityOfElementLocated(By.cssSelector("#username > div > div:nth-child(1)"))).click();
         stepData.webDriver.findElement(By.id("react-select-2-input")).sendKeys(username);
         stepData.webDriver.findElement(By.id("react-select-2-input")).sendKeys(Keys.ENTER);
-        stepData.webDriver.findElement(By.xpath("//*[@id=\"password\"]/div/div[1]")).click();
+        stepData.webDriver.findElement(By.cssSelector("#password > div > div:nth-child(1)")).click();
         stepData.webDriver.findElement(By.id("react-select-3-input")).sendKeys(password);
         stepData.webDriver.findElement(By.id("react-select-3-input")).sendKeys(Keys.ENTER);
         stepData.webDriver.findElement(By.cssSelector(".Button_root__24MxS")).click();
+        Utility.mockGPS(stepData.webDriver);
     }
 }

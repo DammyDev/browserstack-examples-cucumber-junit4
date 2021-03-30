@@ -2,6 +2,8 @@ package stepDefs;
 
 import io.cucumber.java.en.And;
 import org.openqa.selenium.By;
+import org.openqa.selenium.support.ui.ExpectedConditions;
+import org.openqa.selenium.support.ui.WebDriverWait;
 
 public class CheckoutPageSteps {
 
@@ -17,11 +19,20 @@ public class CheckoutPageSteps {
     }
 
     @And("I click on Checkout Button")
-    public void iClickOnCheckoutButton() throws InterruptedException {
+    public void iClickOnCheckoutButton() {
         stepData.webDriver.findElement(By.id("checkout-shipping-continue")).click();
-        Thread.sleep(1500);
-        stepData.webDriver.findElement(By.cssSelector(".button")).click();
-        Thread.sleep(1000);
+        WebDriverWait wait = new WebDriverWait(stepData.webDriver, 5);
+        wait.until(ExpectedConditions.visibilityOfElementLocated(By.cssSelector("#checkout-app > div > div > div > div > a > button"))).click();
+    }
+
+    @And("I enter shipping details {string}, {string}, {string}, {string} and {string}")
+    public void iEnterShippingDetailsAnd(String first, String last, String address, String province, String postCode) {
+        WebDriverWait wait = new WebDriverWait(stepData.webDriver, 5);
+        wait.until(ExpectedConditions.visibilityOfElementLocated(By.id("firstNameInput"))).sendKeys(first);
+        stepData.webDriver.findElement(By.id("lastNameInput")).sendKeys(last);
+        stepData.webDriver.findElement(By.id("addressLine1Input")).sendKeys(address);
+        stepData.webDriver.findElement(By.id("provinceInput")).sendKeys(province);
+        stepData.webDriver.findElement(By.id("postCodeInput")).sendKeys(postCode);
     }
 
 }
