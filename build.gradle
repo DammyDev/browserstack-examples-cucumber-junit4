@@ -17,13 +17,14 @@ repositories {
 dependencies {
     implementation 'org.slf4j:slf4j-api:1.7.30'
     implementation 'ch.qos.logback:logback-classic:1.2.3'
-    implementation 'io.cucumber:cucumber-java:5.4.0'
     implementation 'com.browserstack:browserstack-local-java:1.0.6'
     implementation 'com.googlecode.json-simple:json-simple:1.1.1'
     implementation 'org.apache.commons:commons-lang3:3.11'
+    implementation 'io.qameta.allure:allure-cucumber6-jvm:2.13.8'
     testImplementation 'junit:junit:4.13.1'
-    testImplementation 'io.cucumber:cucumber-junit:5.4.0'
-    testImplementation 'io.cucumber:cucumber-picocontainer:5.4.0'
+    testImplementation 'io.cucumber:cucumber-junit:6.8.1'
+    testImplementation 'io.cucumber:cucumber-java:6.8.1'
+    testImplementation 'io.cucumber:cucumber-picocontainer:6.8.1'
     testImplementation 'org.seleniumhq.selenium:selenium-java:3.141.59'
 }
 
@@ -38,4 +39,10 @@ publishing {
             from(components.java)
         }
     }
+}
+
+task onPrem(type: Test) {
+    System.properties["caps-type"] = "single"
+    System.properties["cucumber.filter.name"] = "End to End Scenario"
+    include '**/RunCucumberTests*'
 }

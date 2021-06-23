@@ -11,8 +11,8 @@
     <properties>
         <maven.compiler.source>15</maven.compiler.source>
         <maven.compiler.target>15</maven.compiler.target>
-        <maven-surefire-plugin.version>2.20</maven-surefire-plugin.version>
-        <cucumber.version>5.4.0</cucumber.version>
+        <maven-surefire-plugin.version>2.22.2</maven-surefire-plugin.version>
+        <cucumber.version>6.8.1</cucumber.version>
         <selenium-java.version>3.141.59</selenium-java.version>
         <browserstack-local-java.version>1.0.6</browserstack-local-java.version>
         <test-name>End to End Scenario</test-name>
@@ -42,18 +42,19 @@
         <dependency>
             <groupId>io.cucumber</groupId>
             <artifactId>cucumber-junit</artifactId>
-            <version>5.4.0</version>
+            <version>${cucumber.version}</version>
             <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>io.cucumber</groupId>
             <artifactId>cucumber-java</artifactId>
-            <version>5.4.0</version>
+            <version>${cucumber.version}</version>
+            <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>io.cucumber</groupId>
             <artifactId>cucumber-picocontainer</artifactId>
-            <version>5.4.0</version>
+            <version>${cucumber.version}</version>
             <scope>test</scope>
         </dependency>
         <dependency>
@@ -77,11 +78,49 @@
             <artifactId>commons-lang3</artifactId>
             <version>3.11</version>
         </dependency>
+        <dependency>
+            <groupId>io.qameta.allure</groupId>
+            <artifactId>allure-cucumber6-jvm</artifactId>
+            <version>2.13.8</version>
+        </dependency>
     </dependencies>
 
+    <build>
+        <pluginManagement>
+            <plugins>
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-surefire-plugin</artifactId>
+                    <version>${maven-surefire-plugin.version}</version>
+                    <dependencies>
+                        <dependency>
+                            <groupId>org.aspectj</groupId>
+                            <artifactId>aspectjweaver</artifactId>
+                            <version>${aspectj.version}</version>
+                        </dependency>
+                    </dependencies>
+                </plugin>
+            </plugins>
+        </pluginManagement>
+        <plugins>
+            <plugin>
+                <groupId>io.qameta.allure</groupId>
+                <artifactId>allure-maven</artifactId>
+                <version>2.10.0</version>
+                <configuration>
+                    <reportVersion>2.13.8</reportVersion>
+                    <resultsDirectory>${project.build.directory}/allure-results</resultsDirectory>
+                </configuration>
+            </plugin>
+        </plugins>
+    </build>
+
     <profiles>
-    <profile>
+        <profile>
         <id>on-prem</id>
+        <activation>
+            <activeByDefault>true</activeByDefault>
+        </activation>
         <build>
             <plugins>
                 <plugin>
@@ -91,6 +130,18 @@
                     <configuration>
                         <systemProperties>
                             <testFailureIgnore>false</testFailureIgnore>
+                            <argLine>
+                                -Dfile.encoding=UTF-8
+                                -javaagent:"${settings.localRepository}/org/aspectj/aspectjweaver/${aspectj.version}/aspectjweaver-${aspectj.version}.jar"
+                            </argLine>
+                            <property>
+                                <name>cucumber.publish.quiet</name>
+                                <value>true</value>
+                            </property>
+                            <property>
+                                <name>cucumber.plugin</name>
+                                <value>html:target/cucumber-html-reports.html,io.qameta.allure.cucumber6jvm.AllureCucumber6Jvm</value>
+                            </property>
                             <property>
                                 <name>env</name>
                                 <value>on-prem</value>
@@ -103,9 +154,13 @@
                                 <name>cucumber.filter.name</name>
                                 <value>${test-name}</value>
                             </property>
+                            <property>
+                                <name>allure.results.directory</name>
+                                <value>${project.build.directory}/allure-results</value>
+                            </property>
                         </systemProperties>
                         <includes>
-                            <include>RunCucumberTests.java</include>
+                            <include>com.browserstack.RunCucumberTests.java</include>
                         </includes>
                     </configuration>
                 </plugin>
@@ -122,7 +177,18 @@
                         <version>${maven-surefire-plugin.version}</version>
                         <configuration>
                             <systemProperties>
-                                <testFailureIgnore>false</testFailureIgnore>
+                                <argLine>
+                                    -Dfile.encoding=UTF-8
+                                    -javaagent:"${settings.localRepository}/org/aspectj/aspectjweaver/${aspectj.version}/aspectjweaver-${aspectj.version}.jar"
+                                </argLine>
+                                <property>
+                                    <name>cucumber.publish.quiet</name>
+                                    <value>true</value>
+                                </property>
+                                <property>
+                                    <name>cucumber.plugin</name>
+                                    <value>html:target/cucumber-html-reports.html,io.qameta.allure.cucumber6jvm.AllureCucumber6Jvm</value>
+                                </property>
                                 <property>
                                     <name>env</name>
                                     <value>on-prem</value>
@@ -131,16 +197,20 @@
                                     <name>caps-type</name>
                                     <value>single</value>
                                 </property>
+                                <property>
+                                    <name>allure.results.directory</name>
+                                    <value>${project.build.directory}/allure-results</value>
+                                </property>
                             </systemProperties>
                             <includes>
-                                <include>RunCucumberTests.java</include>
+                                <include>com.browserstack.RunCucumberTests.java</include>
                             </includes>
                         </configuration>
                     </plugin>
                 </plugins>
             </build>
         </profile>
-    <profile>
+        <profile>
         <id>docker</id>
         <build>
             <plugins>
@@ -150,7 +220,18 @@
                     <version>${maven-surefire-plugin.version}</version>
                     <configuration>
                         <systemProperties>
-                            <testFailureIgnore>false</testFailureIgnore>
+                            <argLine>
+                                -Dfile.encoding=UTF-8
+                                -javaagent:"${settings.localRepository}/org/aspectj/aspectjweaver/${aspectj.version}/aspectjweaver-${aspectj.version}.jar"
+                            </argLine>
+                            <property>
+                                <name>cucumber.publish.quiet</name>
+                                <value>true</value>
+                            </property>
+                            <property>
+                                <name>cucumber.plugin</name>
+                                <value>html:target/cucumber-html-reports.html,io.qameta.allure.cucumber6jvm.AllureCucumber6Jvm</value>
+                            </property>
                             <property>
                                 <name>env</name>
                                 <value>docker</value>
@@ -159,9 +240,13 @@
                                 <name>caps-type</name>
                                 <value>single</value>
                             </property>
+                            <property>
+                                <name>allure.results.directory</name>
+                                <value>${project.build.directory}/allure-results</value>
+                            </property>
                         </systemProperties>
                         <includes>
-                            <include>RunCucumberTests.java</include>
+                            <include>com.browserstack.RunCucumberTests.java</include>
                         </includes>
                     </configuration>
                 </plugin>
@@ -186,6 +271,18 @@
                         <configuration>
                             <systemProperties>
                                 <testFailureIgnore>false</testFailureIgnore>
+                                <argLine>
+                                    -Dfile.encoding=UTF-8
+                                    -javaagent:"${settings.localRepository}/org/aspectj/aspectjweaver/${aspectj.version}/aspectjweaver-${aspectj.version}.jar"
+                                </argLine>
+                                <property>
+                                    <name>cucumber.publish.quiet</name>
+                                    <value>true</value>
+                                </property>
+                                <property>
+                                    <name>cucumber.plugin</name>
+                                    <value>html:target/cucumber-html-reports.html,io.qameta.allure.cucumber6jvm.AllureCucumber6Jvm</value>
+                                </property>
                                 <property>
                                     <name>caps-type</name>
                                     <value>single</value>
@@ -198,9 +295,13 @@
                                     <name>cucumber.filter.name</name>
                                     <value>${test-name}</value>
                                 </property>
+                                <property>
+                                    <name>allure.results.directory</name>
+                                    <value>${project.build.directory}/allure-results</value>
+                                </property>
                             </systemProperties>
                             <includes>
-                                <include>RunCucumberTests.java</include>
+                                <include>com.browserstack.RunCucumberTests.java</include>
                             </includes>
                         </configuration>
                     </plugin>
@@ -217,7 +318,18 @@
                         <version>${maven-surefire-plugin.version}</version>
                         <configuration>
                             <systemProperties>
-                                <testFailureIgnore>false</testFailureIgnore>
+                                <argLine>
+                                    -Dfile.encoding=UTF-8
+                                    -javaagent:"${settings.localRepository}/org/aspectj/aspectjweaver/${aspectj.version}/aspectjweaver-${aspectj.version}.jar"
+                                </argLine>
+                                <property>
+                                    <name>cucumber.publish.quiet</name>
+                                    <value>true</value>
+                                </property>
+                                <property>
+                                    <name>cucumber.plugin</name>
+                                    <value>html:target/cucumber-html-reports.html,io.qameta.allure.cucumber6jvm.AllureCucumber6Jvm</value>
+                                </property>
                                 <property>
                                     <name>caps-type</name>
                                     <value>local</value>
@@ -232,7 +344,7 @@
                                 </property>
                             </systemProperties>
                             <includes>
-                                <include>RunCucumberTests.java</include>
+                                <include>com.browserstack.RunCucumberTests.java</include>
                             </includes>
                         </configuration>
                     </plugin>
@@ -253,7 +365,18 @@
                             <threadCount>5</threadCount>
                             <testFailureIgnore>true</testFailureIgnore>
                             <systemProperties>
-                                <testFailureIgnore>false</testFailureIgnore>
+                                <argLine>
+                                    -Dfile.encoding=UTF-8
+                                    -javaagent:"${settings.localRepository}/org/aspectj/aspectjweaver/${aspectj.version}/aspectjweaver-${aspectj.version}.jar"
+                                </argLine>
+                                <property>
+                                    <name>cucumber.publish.quiet</name>
+                                    <value>true</value>
+                                </property>
+                                <property>
+                                    <name>cucumber.plugin</name>
+                                    <value>html:target/cucumber-html-reports.html,io.qameta.allure.cucumber6jvm.AllureCucumber6Jvm</value>
+                                </property>
                                 <property>
                                     <name>caps-type</name>
                                     <value>single</value>
@@ -262,9 +385,13 @@
                                     <name>env</name>
                                     <value>remote</value>
                                 </property>
+                                <property>
+                                    <name>allure.results.directory</name>
+                                    <value>${project.build.directory}/allure-results</value>
+                                </property>
                             </systemProperties>
                             <includes>
-                                <include>RunCucumberTests.java</include>
+                                <include>com.browserstack.RunCucumberTests.java</include>
                             </includes>
                         </configuration>
                     </plugin>
@@ -285,7 +412,18 @@
                             <threadCount>5</threadCount>
                             <testFailureIgnore>true</testFailureIgnore>
                             <systemProperties>
-                                <testFailureIgnore>false</testFailureIgnore>
+                                <argLine>
+                                    -Dfile.encoding=UTF-8
+                                    -javaagent:"${settings.localRepository}/org/aspectj/aspectjweaver/${aspectj.version}/aspectjweaver-${aspectj.version}.jar"
+                                </argLine>
+                                <property>
+                                    <name>cucumber.publish.quiet</name>
+                                    <value>true</value>
+                                </property>
+                                <property>
+                                    <name>cucumber.plugin</name>
+                                    <value>html:target/cucumber-html-reports.html,io.qameta.allure.cucumber6jvm.AllureCucumber6Jvm</value>
+                                </property>
                                 <property>
                                     <name>caps-type</name>
                                     <value>local</value>
@@ -294,10 +432,53 @@
                                     <name>env</name>
                                     <value>remote</value>
                                 </property>
+                                <property>
+                                    <name>allure.results.directory</name>
+                                    <value>${project.build.directory}/allure-results</value>
+                                </property>
                             </systemProperties>
                             <includes>
-                                <include>RunCucumberTests.java</include>
+                                <include>com.browserstack.RunCucumberTests.java</include>
                             </includes>
+                        </configuration>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+        <profile>
+            <id>bstack-parallel-browsers</id>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.codehaus.mojo</groupId>
+                        <artifactId>exec-maven-plugin</artifactId>
+                        <version>3.0.0</version>
+                        <configuration>
+                            <classpathScope>test</classpathScope>
+                            <mainClass>com.browserstack.ParallelTest</mainClass>
+                            <cleanupDaemonThreads>false</cleanupDaemonThreads>
+                            <systemProperties>
+                                <property>
+                                    <key>cucumber.publish.quiet</key>
+                                    <value>true</value>
+                                </property>
+                                <property>
+                                    <key>cucumber.plugin</key>
+                                    <value>html:target/cucumber-html-reports.html</value>
+                                </property>
+                                <property>
+                                    <key>caps-type</key>
+                                    <value>parallel</value>
+                                </property>
+                                <property>
+                                    <key>parallel-count</key>
+                                    <value>2</value>
+                                </property>
+                                <property>
+                                    <key>env</key>
+                                    <value>remote</value>
+                                </property>
+                            </systemProperties>
                         </configuration>
                     </plugin>
                 </plugins>
