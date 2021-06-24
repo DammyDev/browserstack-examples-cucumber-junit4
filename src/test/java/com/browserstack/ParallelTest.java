@@ -20,7 +20,7 @@ public class ParallelTest {
     public static void main(String[] args) throws IOException, ParseException {
         JSONObject testConfigs;
         JSONObject testSelectedConfig;
-        int threadCount = 2;
+        int threadCount = 5;
         JSONParser parser = new JSONParser();
         testConfigs = (JSONObject) parser.parse(new FileReader("src/test/resources/conf/caps.json"));
         testSelectedConfig = (JSONObject) ((JSONObject) testConfigs.get("tests")).get("parallel");
@@ -32,7 +32,8 @@ public class ParallelTest {
         ExecutorService pool = Executors.newFixedThreadPool(threadCount);
         for (Object obj : environments) {
             JSONObject singleConfig = Utility.getCombinedCapability((Map<String, String>) obj, testConfigs, testSelectedConfig);
-            System.out.println("Single config");
+            System.out.println("Inside Parallel Tests");
+            //System.out.println(singleConfig.toJSONString());
             Runnable task = new Task(singleConfig, threadLocalValue);
             pool.execute(task);
         }
@@ -54,10 +55,9 @@ class Task implements Runnable {
     public void run() {
         System.setProperty("parallel", "true");
         threadLocalValue.set(singleConfig);
-        System.out.println(threadLocalValue.get());
-
+        //System.out.println(threadLocalValue.get());
         try {
-            String[] argv = new String[]{"-g", "", "src/test/resources/com/browserstack/e2e.feature"};
+            String[] argv = new String[]{"-g", "", "src/test/resources/features/"};
             ClassLoader contextClassLoader = Thread.currentThread().getContextClassLoader();
             Main.run(argv, contextClassLoader);
         } catch (Exception e) {
@@ -65,6 +65,5 @@ class Task implements Runnable {
         } finally {
             threadLocalValue.remove();
         }
-
     }
 }

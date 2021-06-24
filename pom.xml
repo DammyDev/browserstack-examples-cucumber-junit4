@@ -472,7 +472,7 @@
                                 </property>
                                 <property>
                                     <key>parallel-count</key>
-                                    <value>2</value>
+                                    <value>10</value>
                                 </property>
                                 <property>
                                     <key>env</key>

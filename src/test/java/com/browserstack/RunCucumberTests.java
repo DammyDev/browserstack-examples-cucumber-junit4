@@ -7,7 +7,7 @@ import org.junit.runner.RunWith;
 @RunWith(Cucumber.class)
 @CucumberOptions(
         features = "src/test/resources/com/browserstack" ,
-        glue= "src/test/java/com/browserstack/stepDefs")
+        glue= "com.browserstack.stepDefs")
 public class RunCucumberTests {
 
 }

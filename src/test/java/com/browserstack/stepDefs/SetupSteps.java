@@ -1,5 +1,6 @@
 package com.browserstack.stepDefs;
 
+import com.browserstack.ParallelTest;
 import com.browserstack.local.Local;
 import io.cucumber.java.After;
 import io.cucumber.java.Before;
@@ -45,13 +46,65 @@ public class SetupSteps {
     public void setUp(Scenario scenario) throws Exception {
 
         JSONParser parser = new JSONParser();
-
-        JSONObject config = (JSONObject) parser.parse(new FileReader(CAPABILITY_CONFIG_FILE));
-
         DesiredCapabilities caps = new DesiredCapabilities();
 
         String osCaps = Utility.getOsCaps();
+        System.out.println("Check environment");
+        if (StringUtils.isNoneEmpty(System.getProperty("env"))) {
 
+            switch (System.getProperty("env")) {
+
+                case "on-prem":
+                    System.out.println("On Prem");
+                    break;
+                case "docker":
+                    System.out.println("Docker");
+                    break;
+                default:
+                    JSONArray environments;
+                    JSONObject selectedConfig = new JSONObject();
+                    JSONObject testConfig = (JSONObject) parser.parse(new FileReader(CAPABILITY_CONFIG_FILE));
+
+                    if (osCaps.equalsIgnoreCase("parallel")) {
+                        System.out.println("Browserstack");
+                        System.out.println(System.getProperty("parallel"));
+                        selectedConfig = ParallelTest.threadLocalValue.get();
+                    }
+                    else {
+                        JSONObject singleCapabilityJson = (JSONObject) ((JSONObject) testConfig.get("tests")).get(osCaps);
+                        environments = (JSONArray) singleCapabilityJson.get("env_caps");
+                        selectedConfig = Utility.getCombinedCapability((Map<String, String>) environments.get(0), testConfig, singleCapabilityJson);
+                    }
+
+                    stepData.url = (String) selectedConfig.get("application_endpoint");
+                    String bstackUrl = Utility.getRemoteUrl(selectedConfig);
+                    Map<String, String> commonCapabilities = (Map<String, String>) selectedConfig.get("capabilities");
+                    Iterator it = commonCapabilities.entrySet().iterator();
+                    while (it.hasNext()) {
+                        Map.Entry pair = (Map.Entry) it.next();
+                        if (caps.getCapability(pair.getKey().toString()) == null) {
+                            caps.setCapability(pair.getKey().toString(), pair.getValue().toString());
+                        }
+                    }
+
+                    if (caps.getCapability("browserstack.local") != null && caps.getCapability("browserstack.local").equals("true")) {
+                        String localIdentifier = RandomStringUtils.randomAlphabetic(8);
+                        caps.setCapability("browserstack.localIdentifier", localIdentifier);
+                        bstackLocal = new Local();
+                        Map<String, String> options = Utility.getLocalOptions(testConfig);
+                        System.out.println((String) selectedConfig.get("key"));
+                        options.put("key", (String) selectedConfig.get("key"));
+                        options.put("localIdentifier", localIdentifier);
+                        System.out.println("Local Start");
+                        bstackLocal.start(options);
+                    }
+
+                    caps.setCapability("name", scenario.getName());
+                    stepData.webDriver = new RemoteWebDriver(new URL(bstackUrl), caps);
+            }
+        }
+
+        /*
         if (StringUtils.isNoneEmpty(System.getProperty("env")) && System.getProperty("env").equalsIgnoreCase("on-prem")) {
 
             stepData.url = URL;
@@ -73,7 +126,7 @@ public class SetupSteps {
             JSONArray environments;
             JSONObject capabilityObject;
             JSONObject capabilityJson = (JSONObject) ((JSONObject) config.get("tests")).get(osCaps);
-
+            System.out.println(System.getProperty("parallel"));
             if (System.getProperty("parallel") != null) {
                 System.out.println("Check Thread Value");
                 System.out.println(ParallelTest.threadLocalValue.get());
@@ -111,6 +164,7 @@ public class SetupSteps {
             caps.setCapability("name", scenario.getName());
             stepData.webDriver = new RemoteWebDriver(new URL(bstackUrl), caps);
         }
+        */
     }
 
     private void setupLocal(DesiredCapabilities caps, JSONObject testConfigs, String accessKey) throws Exception {
